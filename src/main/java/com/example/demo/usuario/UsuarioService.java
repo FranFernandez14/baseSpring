@@ -9,8 +9,8 @@ import org.springframework.stereotype.Service;
 public class UsuarioService extends BaseService<Usuario, Long, DTOUsuarioInput, DTOUsuarioUpdate, DTOUsuarioOutput> {
 
     @Autowired
-    public UsuarioService(UsuarioRepository usuarioRepository, DTOConverterUsuario dtoConverterUsuario) {
-        super(usuarioRepository, dtoConverterUsuario);
+    public UsuarioService(UsuarioRepository usuarioRepository, UsuarioMapper userMapper) {
+        super(usuarioRepository, userMapper);
     }
 }
 

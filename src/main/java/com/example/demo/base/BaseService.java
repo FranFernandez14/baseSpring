@@ -9,22 +9,41 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+
+
+import java.io.Serializable;
+import java.util.Date;
+import java.util.List;
+import java.util.Optional;
+
 public abstract class BaseService<E extends BaseEntity, ID extends Serializable, I, U, O> {
 
+    protected BaseRepository<E, ID> baseRepository;
+    protected EntityMapper entityMapper;
 
-    protected BaseRepository<E,ID> baseRepository;
-    protected DTOConverter<E, I, U, O> dtoConverter;
-
-    public BaseService(BaseRepository<E, ID> baseRepository, DTOConverter<E, I, U, O> dtoConverter) {
+    public BaseService(BaseRepository<E, ID> baseRepository, EntityMapper entityMapper) {
         this.baseRepository = baseRepository;
-        this.dtoConverter = dtoConverter;
+        this.entityMapper = entityMapper;
     }
 
     @Transactional
-    public List<O> findAll() throws Exception {
+    public Page<O> findAll(Pageable pageable) throws Exception {
         try {
-            List<E> entities = baseRepository.findAll();
-            return entities.stream().map(dtoConverter::convertToDto).collect(Collectors.toList());
+            Page<E> entities = baseRepository.findByFechaBajaIsNull(pageable);
+            return entityMapper.toOutputPage(entities);
+        } catch (Exception e) {
+            throw new Exception(e.getMessage());
+        }
+    }
+
+    @Transactional
+    public Page<O> findDeleted(Pageable pageable) throws Exception {
+        try {
+            Page<E> entities = baseRepository.findByFechaBajaIsNotNull(pageable);
+            return entityMapper.toOutputPage(entities);
         } catch (Exception e) {
             throw new Exception(e.getMessage());
         }
@@ -34,7 +53,7 @@ public abstract class BaseService<E extends BaseEntity, ID extends Serializable,
     public O findById(ID id) throws Exception {
         try {
             Optional<E> entityOptional = baseRepository.findById(id);
-            return dtoConverter.convertToDto(entityOptional.orElseThrow(() -> new Exception("Entity not found")));
+            return (O) entityMapper.toOutputDTO(entityOptional.orElseThrow(() -> new Exception("Entity not found")));
         } catch (Exception e) {
             throw new Exception(e.getMessage());
         }
@@ -43,9 +62,9 @@ public abstract class BaseService<E extends BaseEntity, ID extends Serializable,
     @Transactional
     public O save(I inputDto) throws Exception {
         try {
-            E entity = dtoConverter.convertToEntity(inputDto);
+            E entity = (E) entityMapper.toEntity(inputDto);
             entity = baseRepository.save(entity);
-            return dtoConverter.convertToDto(entity);
+            return (O) entityMapper.toOutputDTO(entity);
         } catch (Exception e) {
             throw new Exception(e.getMessage());
         }
@@ -56,9 +75,9 @@ public abstract class BaseService<E extends BaseEntity, ID extends Serializable,
         try {
             Optional<E> entityOptional = baseRepository.findById(id);
             E entityUpdate = entityOptional.orElseThrow(() -> new Exception("Entity not found"));
-            entityUpdate = dtoConverter.updateEntity(updateDto, entityUpdate);
+            entityUpdate = (E) entityMapper.updateEntity(updateDto, entityUpdate);
             entityUpdate = baseRepository.save(entityUpdate);
-            return dtoConverter.convertToDto(entityUpdate);
+            return (O) entityMapper.toOutputDTO(entityUpdate);
         } catch (Exception e) {
             throw new Exception(e.getMessage());
         }

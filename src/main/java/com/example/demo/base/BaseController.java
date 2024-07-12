@@ -14,9 +14,18 @@ public abstract class BaseController<E extends BaseEntity, S extends BaseService
     }
 
     @GetMapping("")
-    public ResponseEntity<?> getAll() {
+    public ResponseEntity<?> getAll(Pageable pageable) {
         try {
-            return ResponseEntity.status(HttpStatus.OK).body(service.findAll());
+            return ResponseEntity.status(HttpStatus.OK).body(service.findAll(pageable));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"error\":\"" + e.getMessage() + "\"}");
+        }
+    }
+
+    @GetMapping("/deleted")
+    public ResponseEntity<?> getDeleted(Pageable pageable) {
+        try {
+            return ResponseEntity.status(HttpStatus.OK).body(service.findDeleted(pageable));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"error\":\"" + e.getMessage() + "\"}");
         }
